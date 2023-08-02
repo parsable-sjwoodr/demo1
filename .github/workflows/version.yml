@@ -1,0 +1,211 @@
+# .github/workflows/version.yml
+name: Git Version
+permissions:
+  issues: write
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    environment: devtest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.head_ref }}   # checkout the correct branch name
+          fetch-depth: 0                # fetch the whole repo history
+
+      - name: Set outputs for short sha1
+        id: vars
+        run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Git Version
+        id: version
+        uses: codacy/git-version@2.7.1
+        with:
+          release-branch: main
+
+      - name: Build and push
+        uses: docker/build-push-action@v4
+        with:
+          push: false
+          tags: sjwoodr/demo1:${{ steps.version.outputs.version }}-rc-${{ steps.vars.outputs.sha_short }}
+
+  deploy-devtest:
+    runs-on: ubuntu-latest
+    environment: devtest
+    needs: build-and-push
+    timeout-minutes: 5
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.head_ref }}   # checkout the correct branch name
+          fetch-depth: 0                # fetch the whole repo history
+
+      # In DEVTEST our version will be <new version>-rc-<current sha1>
+      # If the last tag were 1.2.3, this build will be 1.2.4-rc-abc1234
+      # but we do not TAG the commit in this step, we only version the
+      # artifacts in ECR and Artifactory.
+      - name: Git Version
+        id: version
+        uses: codacy/git-version@2.7.1
+        with:
+          release-branch: main
+      
+      - name: Set outputs for sha_short and new_tag
+        id: vars
+        run: |
+          sha_short=$(git rev-parse --short HEAD)
+          echo "sha_short=${sha_short}" >> $GITHUB_OUTPUT
+          echo "new_tag=${{ steps.version.outputs.version }}-rc-${sha_short}" >> $GITHUB_OUTPUT
+
+      - name: Deploy to DEVTEST
+        run: |
+          echo "Deploying ${{ steps.vars.outputs.new_tag }} to ${{ vars.ENV_NAME }}"
+          echo "Done"
+
+  deploy-dev:
+    runs-on: ubuntu-latest
+    environment: dev
+    needs: deploy-devtest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.head_ref }}   # checkout the correct branch name
+          fetch-depth: 0                # fetch the whole repo history
+
+      # In DEV our version will be <new version>-rc-<current sha1>
+      # If the last tag were 1.2.3, this build will be 1.2.4-rc-abc1234
+      # but we do not TAG the commit in this step, we only version the
+      # artifacts in ECR and Artifactory.
+      - name: Git Version
+        id: version
+        uses: codacy/git-version@2.7.1
+        with:
+          release-branch: main
+      
+      - name: Set outputs for sha_short and new_tag
+        id: vars
+        run: |
+          sha_short=$(git rev-parse --short HEAD)
+          echo "sha_short=${sha_short}" >> $GITHUB_OUTPUT
+          echo "new_tag=${{ steps.version.outputs.version }}-rc-${sha_short}" >> $GITHUB_OUTPUT
+
+      - name: Deploy to DEV
+        run: |
+          echo "Deploying ${{ steps.vars.outputs.new_tag }} to ${{ vars.ENV_NAME }}"
+          echo "Done"
+
+  deploy-qa:
+    runs-on: ubuntu-latest
+    environment: qa
+    needs: deploy-dev
+    timeout-minutes: 5
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.head_ref }}   # checkout the correct branch name
+          fetch-depth: 0                # fetch the whole repo history
+
+      # In QA our version will be <new version>-rc-<current sha1>
+      # If the last tag were 1.2.3, this build will be 1.2.4-rc-abc1234
+      # but we do not TAG the commit in this step, we only version the
+      # artifacts in ECR and Artifactory.
+      - name: Git Version
+        id: version
+        uses: codacy/git-version@2.7.1
+        with:
+          release-branch: main
+      
+      - name: Set outputs for sha_short and new_tag
+        id: vars
+        run: |
+          sha_short=$(git rev-parse --short HEAD)
+          echo "sha_short=${sha_short}" >> $GITHUB_OUTPUT
+          echo "new_tag=${{ steps.version.outputs.version }}-rc-${sha_short}" >> $GITHUB_OUTPUT
+
+      - name: Deploy to QA
+        run: |
+          echo "Deploying ${{ steps.vars.outputs.new_tag }} to ${{ vars.ENV_NAME }}"
+          echo "Done"
+
+  deploy-staging-us-1:
+    runs-on: ubuntu-latest
+    environment: staging-us-1
+    needs: deploy-qa
+    timeout-minutes: 5
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.head_ref }}   # checkout the correct branch name
+          fetch-depth: 0                # fetch the whole repo history
+
+      # In STAGING our version will be <new version>-rc-<current sha1>
+      # If the last tag were 1.2.3, this build will be 1.2.4-rc-abc1234
+      # but we do not TAG the commit in this step, we only version the
+      # artifacts in ECR and Artifactory.
+      - name: Git Version
+        id: version
+        uses: codacy/git-version@2.7.1
+        with:
+          release-branch: main
+      
+      - name: Set outputs for sha_short and new_tag
+        id: vars
+        run: |
+          sha_short=$(git rev-parse --short HEAD)
+          echo "sha_short=${sha_short}" >> $GITHUB_OUTPUT
+          echo "new_tag=${{ steps.version.outputs.version }}-rc-${sha_short}" >> $GITHUB_OUTPUT
+
+      - name: Deploy to STAGING
+        run: |
+          echo "Deploying ${{ steps.vars.outputs.new_tag }} to ${{ vars.ENV_NAME }}"
+          echo "Done"
+
+  deploy-production-us-1:
+    runs-on: ubuntu-latest
+    environment: production-us-1
+    needs: deploy-staging-us-1
+    timeout-minutes: 5
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.head_ref }}   # checkout the correct branch name
+          fetch-depth: 0                # fetch the whole repo history
+
+      # In PRODUCTION our version will be <new version>
+      # If the last tag were 1.2.3, this build will be 1.2.4
+      # We also need to tag this commit in git for the first time
+      - name: Git Version
+        id: version
+        uses: codacy/git-version@2.7.1
+        with:
+          release-branch: main
+      
+      - name: Set outputs for sha_short and new_tag
+        id: vars
+        run: |
+          echo "new_tag=${{ steps.version.outputs.version }}" >> $GITHUB_OUTPUT
+
+      - name: Tag the new production version
+        run: |
+          echo "git tag ${{ steps.vars.outputs.new_tag }}"
+
+      - name: Deploy to Production
+        run: |
+          echo "Deploying ${{ steps.vars.outputs.new_tag }} to ${{ vars.ENV_NAME }}"
+          echo "Done"
