@@ -203,7 +203,8 @@ jobs:
 
       - name: Tag the new production version
         run: |
-          echo "git tag ${{ steps.vars.outputs.new_tag }}"
+          git tag ${{ steps.vars.outputs.new_tag }}
+          git push --tags
 
       - name: Deploy to Production
         run: |
