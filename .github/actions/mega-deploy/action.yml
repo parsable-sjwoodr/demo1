@@ -32,3 +32,4 @@ runs:
     - name: Terraform Validate
       working-directory: ${{ inputs.tf-dir }}
       run: terraform validate
+      shell: bash
