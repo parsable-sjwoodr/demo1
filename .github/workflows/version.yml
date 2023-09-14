@@ -52,7 +52,7 @@ jobs:
           ref: ${{ github.head_ref }}   # checkout the correct branch name
           fetch-depth: 0                # fetch the whole repo history
       - name: Mega Deploy
-        uses: ${{ github.workspace }}/.github/actions/mega-deploy
+        uses: ./.github/actions/mega-deploy
 
       # In DEVTEST our version will be <new version>-rc-<current sha1>
       # If the last tag were 1.2.3, this build will be 1.2.4-rc-abc1234
