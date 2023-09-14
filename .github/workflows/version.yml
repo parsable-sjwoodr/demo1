@@ -53,6 +53,11 @@ jobs:
           fetch-depth: 0                # fetch the whole repo history
       - name: Mega Deploy
         uses: ./.github/actions/mega-deploy
+        with:
+          deploy-role: arn:foo:bar:baz
+          docker-image: some-image:latest
+          deploy-env: devtest
+          tf-dir: tf/environments/us-1/non-prod/devtest
 
       # In DEVTEST our version will be <new version>-rc-<current sha1>
       # If the last tag were 1.2.3, this build will be 1.2.4-rc-abc1234
