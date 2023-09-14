@@ -22,8 +22,11 @@ runs:
   using: "composite"
   steps:
     - run: echo Hello ${{ inputs.docker-image }}.
+      shell: bash
     - run: echo Hello ${{ inputs.deploy-env }}.
+      shell: bash
     - run: echo Hello ${{ inputs.deploy-role }}.
+      shell: bash
     - run: echo Hello ${{ inputs.tf-dir }}.
       shell: bash
     - id: random-number-generator
